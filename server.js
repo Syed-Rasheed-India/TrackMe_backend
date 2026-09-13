@@ -18,24 +18,17 @@ const app = express();
 // MIDDLEWARE
 // ==========================================
 
-// CORS MUST COME BEFORE ROUTES
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://track-me-rho.vercel.app"
+];
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
-
-    methods: [
-      "GET",
-      "POST",
-      "PATCH",
-      "DELETE",
-      "OPTIONS"
-    ],
-
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization"
-    ]
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
 
