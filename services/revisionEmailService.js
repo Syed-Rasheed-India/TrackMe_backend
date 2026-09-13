@@ -137,7 +137,7 @@ Keep learning. Keep remembering. 🚀
 
 // Every day at 8:00 AM
 cron.schedule(
-  "* * * * *",
+  "0 8 * * *",
   () => {
     console.log("Daily revision email scheduler started.");
     sendDailyRevisionEmails();
