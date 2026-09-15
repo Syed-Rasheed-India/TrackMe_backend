@@ -2,14 +2,14 @@ import express from "express";
 import db from "./models/db.js";
 import Task from "./models/task.js";
 import cors from "cors";
-import dotenv from "dotenv";
+import "dotenv/config";
 
 import authMiddleware from "./middleware/authMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
 import emailRoutes from "./routes/emailRoute.js";
 import "./services/revisionEmailService.js";
 
-dotenv.config();
+
 
 const app = express();
 

@@ -3,75 +3,141 @@ import User from "../models/User.js";
 import Task from "../models/task.js";
 import sendMail from "../utils/sendEmail.js";
 
+// ======================================================
+// Get today's date in India
+// ======================================================
 
-// ------------------------------------
+const getTodayIndia = () => {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+};
+
+
+// ======================================================
 // Send today's revision emails
-// ------------------------------------
+// ======================================================
+
 const sendDailyRevisionEmails = async () => {
   try {
+    console.log("======================================");
     console.log("Checking today's revisions...");
+    console.log("======================================");
 
-    // Today's date
-    const today = new Date().toISOString().split("T")[0];
+    // Today's date in India
+    const today = getTodayIndia();
 
+    console.log("Today's date:", today);
+
+    // ==================================================
     // Get all registered users
+    // ==================================================
+
     const users = await User.find();
+
+    console.log("Total users:", users.length);
+
+    // ==================================================
+    // Process each user
+    // ==================================================
 
     for (const user of users) {
 
-      // Get tasks belonging to this user
+      console.log("--------------------------------------");
+      console.log("Checking user:", user.email);
+      console.log("--------------------------------------");
+
+      // ==================================================
+      // Find only this user's tasks
+      // ==================================================
+
       const tasks = await Task.find({
-        user: user._id
+        user: user._id,
       });
+
+      console.log("Tasks found:", tasks.length);
+
+      // ==================================================
+      // Process each task
+      // ==================================================
 
       for (const task of tasks) {
 
-        // Find revisions that are:
-        // 1. Due today
-        // 2. Pending
-        // 3. Unlocked
-        // 4. Email not sent yet
+        console.log("Task concepts:", task.tasks);
+        console.log("Task date:", task.date);
+
+        // ==================================================
+        // Print all revisions for debugging
+        // ==================================================
+
+        task.revisions.forEach((revision) => {
+          console.log({
+            day: revision.day,
+            date: revision.date,
+            status: revision.status,
+            unlocked: revision.unlocked,
+            emailSent: revision.emailSent,
+          });
+        });
+
+        // ==================================================
+        // Find revisions due today
+        // ==================================================
+
         const dueRevisions = task.revisions.filter((revision) => {
           return (
             revision.date === today &&
             revision.status === "pending" &&
             revision.unlocked === true &&
-            revision.emailSent === false
+            revision.emailSent !== true
           );
         });
 
-        // No revision due for this task
+        // ==================================================
+        // No revision due
+        // ==================================================
+
         if (dueRevisions.length === 0) {
+          console.log("No revision due for this task.");
           continue;
         }
 
+        console.log(
+          "Due revisions found:",
+          dueRevisions.length
+        );
 
-        // ------------------------------------
-        // Create revision list for email
-        // ------------------------------------
+        // ==================================================
+        // Create email revision list
+        // ==================================================
 
         let message = "";
 
         dueRevisions.forEach((revision) => {
 
           task.tasks.forEach((concept) => {
-            message += `• ${concept} - Revision Day ${revision.day}\n`;
+
+            message +=
+              `• ${concept} - Revision Day ${revision.day}\n`;
+
           });
 
         });
 
-
-        // ------------------------------------
+        // ==================================================
         // Email subject
-        // ------------------------------------
+        // ==================================================
 
         const emailSubject =
           "TrackMe — Your revisions are due today 🧠";
 
 
-        // ------------------------------------
+        // ==================================================
         // Email content
-        // ------------------------------------
+        // ==================================================
 
         const emailMessage = `
 Hi ${user.fullName},
@@ -90,9 +156,13 @@ Keep learning. Keep remembering. 🚀
 `;
 
 
-        // ------------------------------------
+        // ==================================================
         // Send email
-        // ------------------------------------
+        // ==================================================
+
+        console.log(
+          `Sending email to: ${user.email}`
+        );
 
         await sendMail(
           user.email,
@@ -101,52 +171,68 @@ Keep learning. Keep remembering. 🚀
         );
 
 
-        // ------------------------------------
+        // ==================================================
         // Mark email as sent
-        // ------------------------------------
+        // ==================================================
 
         dueRevisions.forEach((revision) => {
           revision.emailSent = true;
         });
 
 
-        // Save changes to MongoDB
+        // ==================================================
+        // Save to MongoDB
+        // ==================================================
+
         await task.save();
 
 
         console.log(
-          `Revision email sent to ${user.email}`
+          `✅ Revision email sent to ${user.email}`
         );
       }
     }
 
+    console.log("======================================");
     console.log("Today's revision email check completed.");
+    console.log("======================================");
 
   } catch (error) {
-    console.error(
-      "DAILY REVISION EMAIL ERROR:",
-      error
-    );
+
+    console.error("======================================");
+    console.error("❌ DAILY REVISION EMAIL ERROR");
+    console.error(error);
+    console.error("======================================");
+
   }
 };
 
 
-// ------------------------------------
-// Run scheduler
-// ------------------------------------
+// ======================================================
+// SCHEDULER
+// ======================================================
 
-// Every day at 8:00 AM
+// TESTING MODE
+// Runs every minute
+
 cron.schedule(
-  "0 8 * * *",
+  "* * * * *",
   () => {
-    console.log("Daily revision email scheduler started.");
+
+    console.log("");
+    console.log("📧 Daily revision email scheduler started.");
+
     sendDailyRevisionEmails();
 
   },
   {
-    timezone: "Asia/Kolkata"
+    timezone: "Asia/Kolkata",
   }
 );
 
+
+// ======================================================
+// Export
+// ======================================================
 
 export default sendDailyRevisionEmails;
