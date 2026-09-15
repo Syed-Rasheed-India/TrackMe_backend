@@ -216,7 +216,7 @@ Keep learning. Keep remembering. 🚀
 // Runs every minute
 
 cron.schedule(
-  "* * * * *",
+  "0 8 * * *",
   () => {
 
     console.log("");
